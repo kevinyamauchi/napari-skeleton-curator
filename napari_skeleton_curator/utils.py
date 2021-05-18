@@ -3,8 +3,7 @@ import skan
 from skimage.exposure import exposure
 from skimage.filters import gaussian
 from skimage.filters import threshold_mean
-from skimage.morphology import remove_small_holes
-from skimage.morphology import skeletonize
+from skimage.morphology import binary_dilation, disk, remove_small_holes, skeletonize
 
 
 def preprocess_image(
@@ -38,7 +37,7 @@ def make_skeleton(skeleton_im: np.ndarray):
 def remove_small_branches(
         skeleton,
         summary,
-        min_branch_dist: float = 20,
+        min_branch_dist: float = 50,
         max_branch_type: int = 2
 ):
     #    branch types can be selected as follows:
@@ -57,3 +56,16 @@ def remove_small_branches(
     summary_pruned['index'] = np.arange(summary_pruned.shape[0]) + 1
 
     return pruned, summary_pruned
+
+
+def fill_skeleton_holes(skeleton_im: np.ndarray, size: int = 3):
+    binary_skeleton = skeleton_im.astype(bool)
+    dilated_skeleton = binary_dilation(binary_skeleton, selem=disk(size))
+
+    filled_skeleton = skeletonize(dilated_skeleton)
+
+    filled_obj = skan.Skeleton(filled_skeleton)
+    filled_skeleton_labels = np.asarray(filled_obj)
+    filled_skeleton_summary = skan.summarize(filled_obj)
+
+    return filled_skeleton_labels, filled_skeleton_summary, filled_obj

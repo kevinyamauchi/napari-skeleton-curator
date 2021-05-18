@@ -2,13 +2,11 @@ from napari_plugin_engine import napari_hook_implementation
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
-from .utils import preprocess_image, make_skeleton, remove_small_branches
+from .utils import preprocess_image, make_skeleton, remove_small_branches, fill_skeleton_holes
+
 
 class QtSkeletonCurator(QWidget):
-    # your QWidget.__init__ can optionally request the napari viewer instance
-    # in one of two ways:
-    # 1. use a parameter called `napari_viewer`, as done here
-    # 2. use a type annotation of 'napari.viewer.Viewer' for any parameter
+
     def __init__(self, napari_viewer):
         super().__init__()
         self.viewer = napari_viewer
@@ -27,6 +25,14 @@ class QtSkeletonCurator(QWidget):
         self.prune_btn = QPushButton("Prune image")
         self.prune_btn.clicked.connect(self._on_prune)
 
+        # make a button to fill
+        self.fill_btn = QPushButton("Fill skeleton")
+        self.fill_btn.clicked.connect(self._on_fill)
+
+        # make a button to save
+        self.save_btn = QPushButton("Save summary")
+        self.save_btn.clicked.connect(self._on_save_summary)
+
         # todo: add layer selection
         self.selected_layer = 'segmentation'
         self.segments_to_prune = []
@@ -39,6 +45,8 @@ class QtSkeletonCurator(QWidget):
         self.layout().addWidget(self.pre_process_btn)
         self.layout().addWidget(self.skeletonize_btn)
         self.layout().addWidget(self.prune_btn)
+        self.layout().addWidget(self.fill_btn)
+        self.layout().addWidget(self.save_btn)
 
 
     def _on_pre_process(self):
@@ -64,8 +72,6 @@ class QtSkeletonCurator(QWidget):
         # make the layer with the skeleton
         self.viewer.add_labels(skeletononized_im, name="skeletonize", properties=summary,)
 
-
-
     def _on_prune(self):
         # prune the skeleton obj
         skeleton = self.skeleton['skeletonize']
@@ -74,11 +80,28 @@ class QtSkeletonCurator(QWidget):
         pruned, summary_pruned = remove_small_branches(
             skeleton,
             summary,
-            min_branch_dist=20,
+            min_branch_dist=50,
             max_branch_type=2
         )
         pruned_im = np.asarray(pruned)
         self.viewer.add_labels(pruned_im, properties = summary_pruned, name= 'prune')
+
+    def _on_fill(self):
+        # get the image to skeletonize
+        im = self.viewer.layers['prune'].data
+
+        # pass the image to our skeletonize function
+        skeletononized_im, summary, skeleton_obj = fill_skeleton_holes(im, size=3)
+        self.skeleton.update({'filled_skeleton': skeleton_obj})
+        self.summary.update({'filled_skeleton': summary})
+
+        self.viewer.add_labels(skeletononized_im, name="filled_skeleton", properties=summary)
+
+    def _on_save_summary(self):
+        summary_key= 'filled_skeleton'
+        file_name = 'data.csv'
+        summary = self.summary[summary_key]
+        summary.to_csv(file_name)
 
     def _on_mouse_click(self, layer, event):
         if layer.name == self.selected_layer:
