@@ -1,3 +1,4 @@
+import magicgui
 from napari_plugin_engine import napari_hook_implementation
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
@@ -13,21 +14,56 @@ class QtSkeletonCurator(QWidget):
         self.skeleton = {}
         self.summary = {}
 
-        # make a button to pre-process
-        self.pre_process_btn = QPushButton("Pre-process image")
-        self.pre_process_btn.clicked.connect(self._on_pre_process)
+        # make a widget for preprocessing
+        # todo: add ability to detect images already in the GUI
+        self.pre_process_widget = magicgui.magicgui(
+            preprocess_image,
+            call_button='pre-process image'
+        )
+        self.viewer.layers.events.inserted.connect(
+            self.pre_process_widget.reset_choices
+        )
+        self.viewer.layers.events.removed.connect(
+            self.pre_process_widget.reset_choices
+        )
 
         # make a button to skeletonize
-        self.skeletonize_btn = QPushButton("Skeletonize image")
-        self.skeletonize_btn.clicked.connect(self._on_skeletonize)
+        self.skeletonize_widget = magicgui.magicgui(
+            make_skeleton,
+            call_button='skeletonize image'
+        )
+        self.skeletonize_widget.called.connect(self._on_skeletonize)
+        self.viewer.layers.events.inserted.connect(
+            self.skeletonize_widget.reset_choices
+        )
+        self.viewer.layers.events.removed.connect(
+            self.skeletonize_widget.reset_choices
+        )
 
         # make a button to prune
-        self.prune_btn = QPushButton("Prune image")
-        self.prune_btn.clicked.connect(self._on_prune)
+        self.prune_widget = magicgui.magicgui(
+            self._on_prune,
+            call_button='Prune branches'
+        )
+        self.viewer.layers.events.inserted.connect(
+            self.prune_widget.reset_choices
+        )
+        self.viewer.layers.events.removed.connect(
+            self.prune_widget.reset_choices
+        )
 
-        # make a button to fill
-        self.fill_btn = QPushButton("Fill skeleton")
-        self.fill_btn.clicked.connect(self._on_fill)
+        # make a button to fill gaps in the skeleton
+        self.fill_widget = magicgui.magicgui(
+            fill_skeleton_holes,
+            call_button='fill skeleton'
+        )
+        self.fill_widget.called.connect(self._on_fill)
+        self.viewer.layers.events.inserted.connect(
+            self.fill_widget.reset_choices
+        )
+        self.viewer.layers.events.removed.connect(
+            self.fill_widget.reset_choices
+        )
 
         # make a button to save
         self.save_btn = QPushButton("Save summary")
@@ -42,10 +78,10 @@ class QtSkeletonCurator(QWidget):
         # labels_layer.mouse_drag_callbacks.append(self._on_mouse_click)
 
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.pre_process_btn)
-        self.layout().addWidget(self.skeletonize_btn)
-        self.layout().addWidget(self.prune_btn)
-        self.layout().addWidget(self.fill_btn)
+        self.layout().addWidget(self.pre_process_widget.native)
+        self.layout().addWidget(self.skeletonize_widget.native)
+        self.layout().addWidget(self.prune_widget.native)
+        self.layout().addWidget(self.fill_widget.native)
         self.layout().addWidget(self.save_btn)
 
 
@@ -59,20 +95,23 @@ class QtSkeletonCurator(QWidget):
         # add the preprocessed image as a new layer
         self.viewer.add_image(preprocessed_im, name='preprocessed')
 
-    def _on_skeletonize(self):
+    def _on_skeletonize(self, event):
+        # get the results from the event object
+        skeletononized_im, summary, skeleton_obj = event.value
 
-        # get the image to skeletonize
-        im = self.viewer.layers['preprocessed'].data
-
-        # pass the image to our skeletonize function
-        skeletononized_im, summary, skeleton_obj = make_skeleton(im)
+        # store the skeleton data
         self.skeleton.update({'skeletonize': skeleton_obj})
         self.summary.update({'skeletonize': summary})
 
         # make the layer with the skeleton
         self.viewer.add_labels(skeletononized_im, name="skeletonize", properties=summary,)
 
-    def _on_prune(self):
+    def _on_prune(
+            self, min_branch_distance: float,
+            branch_type_0: bool = True,
+            branch_type_1: bool = True,
+            branch_type_2: bool = False,
+            branch_type_3: bool = False,):
         # prune the skeleton obj
         skeleton = self.skeleton['skeletonize']
         summary = self.summary['skeletonize']
@@ -80,18 +119,18 @@ class QtSkeletonCurator(QWidget):
         pruned, summary_pruned = remove_small_branches(
             skeleton,
             summary,
-            min_branch_dist=50,
-            max_branch_type=2
-        )
+            min_branch_dist=min_branch_distance,
+            branch_type_0=branch_type_0,
+            branch_type_1=branch_type_1,
+            branch_type_2=branch_type_2,
+            branch_type_3=branch_type_3,
+            )
         pruned_im = np.asarray(pruned)
         self.viewer.add_labels(pruned_im, properties = summary_pruned, name= 'prune')
 
-    def _on_fill(self):
-        # get the image to skeletonize
-        im = self.viewer.layers['prune'].data
-
+    def _on_fill(self,event):
         # pass the image to our skeletonize function
-        skeletononized_im, summary, skeleton_obj = fill_skeleton_holes(im, size=3)
+        skeletononized_im, summary, skeleton_obj = event.value
         self.skeleton.update({'filled_skeleton': skeleton_obj})
         self.summary.update({'filled_skeleton': summary})
 

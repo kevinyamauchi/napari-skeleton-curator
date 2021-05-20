@@ -1,4 +1,8 @@
+from typing import Tuple, Union
+
+from napari.types import ImageData, LabelsData
 import numpy as np
+import pandas as pd
 import skan
 from skimage.exposure import exposure
 from skimage.filters import gaussian
@@ -7,11 +11,11 @@ from skimage.morphology import binary_dilation, disk, remove_small_holes, skelet
 
 
 def preprocess_image(
-        image: np.ndarray,
+        image: ImageData,
         gamma: float=1.5,
         sigma: float=2,
         area_threshold: float = 150
-) -> np.ndarray:
+) -> ImageData:
     gamma_corrected = exposure.adjust_gamma(image, gamma)
 
     gaussian_original_image = gaussian(gamma_corrected, sigma=sigma)
@@ -24,7 +28,9 @@ def preprocess_image(
     return skeleton_mean_binary
 
 
-def make_skeleton(skeleton_im: np.ndarray):
+def make_skeleton(skeleton_im: ImageData) -> Tuple[LabelsData, pd.DataFrame, skan.Skeleton]:
+    if skeleton_im.dtype != bool:
+        raise TypeError('skeleton image should be a boolean image')
     skeleton_obj= skan.Skeleton(skeleton_im)
     summary = skan.summarize(skeleton_obj)
 
@@ -35,21 +41,37 @@ def make_skeleton(skeleton_im: np.ndarray):
 
 
 def remove_small_branches(
-        skeleton,
-        summary,
+        skeleton: skan.Skeleton,
+        summary: pd.DataFrame,
         min_branch_dist: float = 50,
-        max_branch_type: int = 2
+        branch_type_0: bool = True,
+        branch_type_1: bool = True,
+        branch_type_2: bool = False,
+        branch_type_3: bool = False,
 ):
+    too_short = (summary['branch-distance'] < min_branch_dist)
+
+    # get the branches that are of the type to cut
     #    branch types can be selected as follows:
     #     0 = endpoint-to-endpoint (isolated branch)
     #     1 = junction-to-endpoint
     #     2 = junction-to-junction
     #     3 = isolated cycle
-    to_cut = (summary['branch-distance'] < min_branch_dist) & (summary['branch-type'] < max_branch_type)
+    types_to_prune = []
+    if branch_type_0:
+        types_to_prune.append(0)
+    if branch_type_1:
+        types_to_prune.append(1)
+    if branch_type_2:
+        types_to_prune.append(2)
+    if branch_type_3:
+        types_to_prune.append(3)
+    wrong_type = summary['branch-type'].isin(types_to_prune)
 
     # Pruning is implemented in https://github.com/jni/skan/pull/117
     # pass in a list of branch ids to get a new skeleton with those branches
     # removed.
+    to_cut = too_short & wrong_type
     pruned = skeleton.prune_paths(np.flatnonzero(to_cut))
 
     summary_pruned = skan.summarize(pruned)
@@ -58,9 +80,12 @@ def remove_small_branches(
     return pruned, summary_pruned
 
 
-def fill_skeleton_holes(skeleton_im: np.ndarray, size: int = 3):
+def fill_skeleton_holes(
+        skeleton_im: LabelsData,
+        dilation_size: int = 3
+) -> Tuple[LabelsData, pd.DataFrame, skan.Skeleton]:
     binary_skeleton = skeleton_im.astype(bool)
-    dilated_skeleton = binary_dilation(binary_skeleton, selem=disk(size))
+    dilated_skeleton = binary_dilation(binary_skeleton, selem=disk(dilation_size))
 
     filled_skeleton = skeletonize(dilated_skeleton)
 
