@@ -39,8 +39,8 @@ skeleton = skan.Skeleton(skeleton_mean_binary)
 # One row per branch
 # One column per measurement
 summary = skan.summarize(skeleton)
-print(summary.columns)  # see what properties skan computes per branch
-print(summary.describe())  # maybe. From memory
+# see what properties skan computes per branch
+#print(summary.describe())  # maybe. From memory
 # branch indices start at 0
 # but to display a label image in napari, we need labels starting at 1
 # So np.asarray(Skeleton) returns an image with each branch index offset by 1
@@ -68,9 +68,9 @@ pruned = skeleton.prune_paths(np.flatnonzero(to_cut))
 
 # some branches are merged in the new skeleton, so properties need to be
 # recomputed.
-summary_pruned = skan.summarize(pruned)
-summary_pruned['index'] = np.arange(summary_pruned.shape[0]) + 1
-viewer.add_labels(np.asarray(pruned), name='pruned', properties=summary_pruned)
+#summary_pruned = skan.summarize(pruned)
+#summary_pruned['index'] = np.arange(summary_pruned.shape[0]) + 1
+#viewer.add_labels(np.asarray(pruned), name='pruned', properties=summary_pruned)
 
 #########
 # New chapter: hack to measure branch thickness
@@ -100,6 +100,20 @@ to_cut = (
 pruned_float = skeleton_float.prune_paths(np.flatnonzero(to_cut))
 summary_float_pruned = skan.summarize(pruned_float)
 summary_float_pruned['index'] = np.arange(summary_float_pruned.shape[0]) + 1
+
+
+# Calculate the tortuosity of each branch
+# We define tortuosity as total branch length divided by Euclidean distance
+# between the endpoints (ranges [1, ∞))
+summary_float_pruned['tortuosity'] = (
+        summary_float_pruned['branch-distance']
+        / summary_float_pruned['euclidean-distance']
+        )
+
+# Change the next line if you want only a subset of columns
+columns_we_want = summary_float_pruned.columns
+summary_only_relevant = summary_float_pruned[columns_we_want]
+
 labels_layer = viewer.add_labels(
         np.asarray(pruned_float),
         name='pruned float',
@@ -127,3 +141,4 @@ labels_layer.color = color_dict
 # You can save pandas dataframes, e.g.
 summary_float_pruned.to_csv('data.csv')
 napari.run()
+

@@ -1,9 +1,11 @@
 import magicgui
+import napari
 from napari_plugin_engine import napari_hook_implementation
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
+from skimage import io
 
-from .utils import preprocess_image, make_skeleton, remove_small_branches, fill_skeleton_holes
+from napari_skeleton_curator.utils import preprocess_image, make_skeleton, remove_small_branches, fill_skeleton_holes
 
 
 class QtSkeletonCurator(QWidget):
@@ -170,3 +172,6 @@ def napari_experimental_provide_dock_widget():
     # you can return either a single widget, or a sequence of widgets
     return QtSkeletonCurator
 
+image = io.imread('/home/marlene/Documents/Github/napari-skeleton-curator/control 1.lsm-C3-MAX.tiff')
+viewer = napari.view_image(image)
+napari.run()
