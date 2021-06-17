@@ -1,5 +1,4 @@
 import magicgui
-import napari
 from napari_plugin_engine import napari_hook_implementation
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
@@ -14,6 +13,9 @@ class QtSkeletonCurator(QWidget):
         self.viewer = napari_viewer
         self.skeleton = {}
         self.summary = {}
+
+        # turn on toolips
+        self.viewer.tooltip.visible = True
 
         # make a widget for preprocessing
         # todo: add ability to detect images already in the GUI
@@ -133,6 +135,14 @@ class QtSkeletonCurator(QWidget):
         # pass the image to our skeletonize function
         skeletononized_im, summary, skeleton_obj = event.value
         self.skeleton.update({'filled_skeleton': skeleton_obj})
+
+        # Calculate the tortuosity of each branch
+        # We define tortuosity as total branch length divided by Euclidean distance
+        # between the endpoints (ranges [1, ∞))
+        summary['tortuosity'] = (
+                summary['branch-distance']
+                / summary['euclidean-distance']
+        )
         self.summary.update({'filled_skeleton': summary})
 
         self.viewer.add_labels(skeletononized_im, name="filled_skeleton", properties=summary)
