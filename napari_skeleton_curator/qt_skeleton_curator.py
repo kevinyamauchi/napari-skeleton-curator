@@ -1,5 +1,6 @@
 import magicgui
 from napari_plugin_engine import napari_hook_implementation
+from napari.layers import Image
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
@@ -18,10 +19,12 @@ class QtSkeletonCurator(QWidget):
         self.viewer.tooltip.visible = True
 
         # make a widget for preprocessing
-        # todo: add ability to detect images already in the GUI
+
+
         self.pre_process_widget = magicgui.magicgui(
             preprocess_image,
-            call_button='pre-process image'
+            call_button='pre-process image',
+            image={'choices': self._update_image_data}
         )
         self.viewer.layers.events.inserted.connect(
             self.pre_process_widget.reset_choices
@@ -87,6 +90,15 @@ class QtSkeletonCurator(QWidget):
         self.layout().addWidget(self.fill_widget.native)
         self.layout().addWidget(self.save_btn)
 
+    def _update_image_data(self, event):
+        # hacky way to get current image layers - ask Talley
+        # how to improve...
+        choices = []
+        for layer in [x for x in self.viewer.layers if isinstance(x, Image)]:
+            choice_key = f'{layer.name} (data)'
+            choices.append((choice_key, layer.data))
+
+        return choices
 
     def _on_pre_process(self):
         # get the image to pre-process
