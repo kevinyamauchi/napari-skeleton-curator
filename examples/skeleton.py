@@ -15,6 +15,13 @@ import numpy as np
 
 image = io.imread('./control-1.lsm-C3-MAX.tiff')
 viewer = napari.view_image(image)
+
+# set the viewer to display the tooltip
+# (e.g., shows properties on labels layer)
+# this requires napari >= 0.4.9
+# pip install --upgrade napari
+viewer.tooltip.visible = True
+
 gamma_corrected = exposure.adjust_gamma(image, 1.5)
 viewer.add_image(gamma_corrected)
 gaussian_original_image = gaussian(gamma_corrected, sigma=2)
