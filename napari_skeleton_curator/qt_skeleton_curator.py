@@ -171,7 +171,3 @@ class QtSkeletonCurator(QWidget):
 def napari_experimental_provide_dock_widget():
     # you can return either a single widget, or a sequence of widgets
     return QtSkeletonCurator
-
-image = io.imread('/home/marlene/Documents/Github/napari-skeleton-curator/control 1.lsm-C3-MAX.tiff')
-viewer = napari.view_image(image)
-napari.run()
