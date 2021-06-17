@@ -3,9 +3,8 @@ import napari
 from napari_plugin_engine import napari_hook_implementation
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
-from skimage import io
 
-from napari_skeleton_curator.utils import preprocess_image, make_skeleton, remove_small_branches, fill_skeleton_holes
+from .utils import preprocess_image, make_skeleton, remove_small_branches, fill_skeleton_holes
 
 
 class QtSkeletonCurator(QWidget):
