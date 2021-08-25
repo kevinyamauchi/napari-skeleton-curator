@@ -1,5 +1,4 @@
 import magicgui
-from napari_plugin_engine import napari_hook_implementation
 from napari.layers import Image
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
@@ -19,8 +18,6 @@ class QtSkeletonCurator(QWidget):
         self.viewer.tooltip.visible = True
 
         # make a widget for preprocessing
-
-
         self.pre_process_widget = magicgui.magicgui(
             preprocess_image,
             call_button='pre-process image',
@@ -119,7 +116,13 @@ class QtSkeletonCurator(QWidget):
         self.summary.update({'skeletonize': summary})
 
         # make the layer with the skeleton
-        self.viewer.add_labels(skeletononized_im, name="skeletonize", properties=summary,)
+        self.viewer.add_labels(
+            skeletononized_im,
+            name="skeletonize",
+            properties=summary,
+            metadata={'skan_obj': skeleton_obj}
+        )
+
 
     def _on_prune(
             self, min_branch_distance: float,
@@ -187,8 +190,3 @@ class QtSkeletonCurator(QWidget):
         current_color[3] = alpha
         color_map.update({label_value: current_color})
         selected_layer.color = color_map
-
-@napari_hook_implementation
-def napari_experimental_provide_dock_widget():
-    # you can return either a single widget, or a sequence of widgets
-    return QtSkeletonCurator
