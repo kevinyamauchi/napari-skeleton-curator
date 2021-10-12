@@ -5,22 +5,24 @@ import numpy as np
 import pandas as pd
 import skan
 from skimage.exposure import exposure
-from skimage.filters import gaussian
-from skimage.filters import threshold_mean
+from skimage.filters import gaussian,threshold_mean,frangi
 from skimage.morphology import binary_dilation, disk, remove_small_holes, skeletonize
 
 
 def preprocess_image(
         image: ImageData,
-        gamma: float=1.5,
-        sigma: float=2,
+        gamma: float=1,
+        gain: float=1,
+        sigma: float=1,
+        sigmas: float=1,
         area_threshold: float = 150
 ) -> ImageData:
     gamma_corrected = exposure.adjust_gamma(image, gamma)
 
-    gaussian_original_image = gaussian(gamma_corrected, sigma=sigma)
+    gaussian_original_image = gaussian(gamma_corrected, gaussiansigma=sigma, gain=gain)
     mean_thresh_gaussian = threshold_mean(gaussian_original_image)
     mean_binary = gaussian_original_image > mean_thresh_gaussian
+    frangi_mean = frangi(mean_binary,sigmas=sigmas)
 
     remove_holes_binary = remove_small_holes(mean_binary, area_threshold=area_threshold)
     skeleton_mean_binary = skeletonize(remove_holes_binary)
