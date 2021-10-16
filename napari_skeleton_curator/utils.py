@@ -10,16 +10,16 @@ from skimage.morphology import binary_dilation, disk, remove_small_holes, skelet
 
 
 def preprocess_image(
-        image: ImageData,
-        gamma: float=1,
+        image: ImageData,   #! does not upload image
+        gamma: float=1,     #! allow real time visulaisation
         gain: float=1,
         sigma: float=1,
         sigmas: float=1,
         area_threshold: float = 150
 ) -> ImageData:
-    gamma_corrected = exposure.adjust_gamma(image, gamma)
+    gamma_corrected = exposure.adjust_gamma(image, gamma=gamma, gain=gain)
 
-    gaussian_original_image = gaussian(gamma_corrected, gaussiansigma=sigma, gain=gain)
+    gaussian_original_image = gaussian(gamma_corrected, sigma=sigma)
     mean_thresh_gaussian = threshold_mean(gaussian_original_image)
     mean_binary = gaussian_original_image > mean_thresh_gaussian
     frangi_mean = frangi(mean_binary,sigmas=sigmas)
