@@ -7,4 +7,4 @@ contributions:
     python_name: napari_skeleton_curator.qt_skeleton_curator:QtSkeletonCurator
   widgets:
   - command: napari-skeleton-curator.qt_skeleton_curator.QtSkeletonCurator
-    display_name: Qt Skeleton Curator
+    display_name: Skeleton Curator
