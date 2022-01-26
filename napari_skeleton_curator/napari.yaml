@@ -1,0 +1,10 @@
+name: napari-skeleton-curator
+schema_version: 0.1.0
+contributions:
+  commands:
+  - id: napari-skeleton-curator.qt_skeleton_curator.QtSkeletonCurator
+    title: Create Qt Skeleton Curator
+    python_name: napari_skeleton_curator.qt_skeleton_curator:QtSkeletonCurator
+  widgets:
+  - command: napari-skeleton-curator.qt_skeleton_curator.QtSkeletonCurator
+    display_name: Qt Skeleton Curator

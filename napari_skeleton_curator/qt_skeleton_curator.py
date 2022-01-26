@@ -1,5 +1,4 @@
 import magicgui
-from napari_plugin_engine import napari_hook_implementation
 from napari.layers import Image
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
@@ -187,8 +186,3 @@ class QtSkeletonCurator(QWidget):
         current_color[3] = alpha
         color_map.update({label_value: current_color})
         selected_layer.color = color_map
-
-@napari_hook_implementation
-def napari_experimental_provide_dock_widget():
-    # you can return either a single widget, or a sequence of widgets
-    return QtSkeletonCurator
