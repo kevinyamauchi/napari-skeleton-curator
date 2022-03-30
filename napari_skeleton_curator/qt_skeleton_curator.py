@@ -18,7 +18,7 @@ class QtSkeletonCurator(QWidget):
         # todo: add ability to detect images already in the GUI
         self.pre_process_widget = magicgui.magicgui(
             preprocess_image,
-            call_button='pre-process image'
+            call_button='Pre-process image'
         )
         self.viewer.layers.events.inserted.connect(
             self.pre_process_widget.reset_choices
@@ -30,7 +30,7 @@ class QtSkeletonCurator(QWidget):
         # make a button to skeletonize
         self.skeletonize_widget = magicgui.magicgui(
             make_skeleton,
-            call_button='skeletonize image'
+            call_button='Skeletonize image'
         )
         self.skeletonize_widget.called.connect(self._on_skeletonize)
         self.viewer.layers.events.inserted.connect(
@@ -55,7 +55,7 @@ class QtSkeletonCurator(QWidget):
         # make a button to fill gaps in the skeleton
         self.fill_widget = magicgui.magicgui(
             fill_skeleton_holes,
-            call_button='fill skeleton'
+            call_button='Fill skeleton'
         )
         self.fill_widget.called.connect(self._on_fill)
         self.viewer.layers.events.inserted.connect(
@@ -90,7 +90,7 @@ class QtSkeletonCurator(QWidget):
         im = self.viewer.layers['raw'].data
 
         # pass the image to our pre-process function
-        preprocessed_im = preprocess_image(im, gamma=1.5, sigma=2, area_threshold=150)
+        preprocessed_im = preprocess_image(im, gamma=1, gain=1,sigma=1,sigmas=1,area_threshold=150)
 
         # add the preprocessed image as a new layer
         self.viewer.add_image(preprocessed_im, name='preprocessed')

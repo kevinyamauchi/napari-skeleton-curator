@@ -1,1 +1,13 @@
 -e .
+pyparsing~=3.0.7
+setuptools~=61.2.0
+packaging~=21.3
+numpy~=1.22.3
+pandas~=1.4.1
+skan~=0.10.0
+napari~=0.4.15
+scikit-image~=0.19.2
+magicgui~=0.4.0
+QtPy~=2.0.1
+matplotlib~=3.5.1
+scipy~=1.8.0
