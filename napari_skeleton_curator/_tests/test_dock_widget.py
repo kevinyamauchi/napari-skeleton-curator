@@ -1,10 +1,9 @@
-from napari_skeleton_curator import napari_experimental_provide_dock_widget
 import pytest
 
 # this is your plugin name declared in your napari.plugins entry point
 MY_PLUGIN_NAME = "napari-skeleton-curator"
 # the name of your widget(s)
-MY_WIDGET_NAMES = ["Example Q Widget", "example_magic_widget"]
+MY_WIDGET_NAMES = ["Skeleton Curator"]
 
 
 @pytest.mark.parametrize("widget_name", MY_WIDGET_NAMES)
