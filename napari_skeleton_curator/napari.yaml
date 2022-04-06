@@ -1,0 +1,15 @@
+name: napari-skeleton-curator
+schema_version: 0.1.0
+contributions:
+  commands:
+  - id: napari-skeleton-curator.qt_skeleton_curator.QtSkeletonCurator
+    title: Create Skeleton Curator dock widget
+    python_name: napari_skeleton_curator.qt_skeleton_curator:QtSkeletonCurator
+  - id: napari-skeleton-curator.qt_skeleton_pruner.QtSkeletonPruner
+    title: Create Skeleton Pruner dock widget
+    python_name: napari_skeleton_curator.qt_skeleton_pruner:QtSkeletonPruner
+  widgets:
+  - command: napari-skeleton-curator.qt_skeleton_curator.QtSkeletonCurator
+    display_name: Skeleton Curator
+  - command: napari-skeleton-curator.qt_skeleton_pruner.QtSkeletonPruner
+    display_name: Skeleton Pruner

@@ -1,5 +1,5 @@
 import magicgui
-from napari_plugin_engine import napari_hook_implementation
+from napari.layers import Image
 import numpy as np
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
@@ -14,11 +14,14 @@ class QtSkeletonCurator(QWidget):
         self.skeleton = {}
         self.summary = {}
 
+        # turn on toolips
+        self.viewer.tooltip.visible = True
+
         # make a widget for preprocessing
-        # todo: add ability to detect images already in the GUI
         self.pre_process_widget = magicgui.magicgui(
             preprocess_image,
-            call_button='Pre-process image'
+            call_button='pre-process image',
+            image={'choices': self._update_image_data}
         )
         self.viewer.layers.events.inserted.connect(
             self.pre_process_widget.reset_choices
@@ -84,6 +87,15 @@ class QtSkeletonCurator(QWidget):
         self.layout().addWidget(self.fill_widget.native)
         self.layout().addWidget(self.save_btn)
 
+    def _update_image_data(self, event):
+        # hacky way to get current image layers - ask Talley
+        # how to improve...
+        choices = []
+        for layer in [x for x in self.viewer.layers if isinstance(x, Image)]:
+            choice_key = f'{layer.name} (data)'
+            choices.append((choice_key, layer.data))
+
+        return choices
 
     def _on_pre_process(self):
         # get the image to pre-process
@@ -95,16 +107,22 @@ class QtSkeletonCurator(QWidget):
         # add the preprocessed image as a new layer
         self.viewer.add_image(preprocessed_im, name='preprocessed')
 
-    def _on_skeletonize(self, event):
+    def _on_skeletonize(self, function_output):
         # get the results from the event object
-        skeletononized_im, summary, skeleton_obj = event.value
+        skeletononized_im, summary, skeleton_obj = function_output
 
         # store the skeleton data
         self.skeleton.update({'skeletonize': skeleton_obj})
         self.summary.update({'skeletonize': summary})
 
         # make the layer with the skeleton
-        self.viewer.add_labels(skeletononized_im, name="skeletonize", properties=summary,)
+        self.viewer.add_labels(
+            skeletononized_im,
+            name="skeletonize",
+            properties=summary,
+            metadata={'skan_obj': skeleton_obj}
+        )
+
 
     def _on_prune(
             self, min_branch_distance: float,
@@ -128,10 +146,18 @@ class QtSkeletonCurator(QWidget):
         pruned_im = np.asarray(pruned)
         self.viewer.add_labels(pruned_im, properties = summary_pruned, name= 'prune')
 
-    def _on_fill(self,event):
+    def _on_fill(self, function_output):
         # pass the image to our skeletonize function
-        skeletononized_im, summary, skeleton_obj = event.value
+        skeletononized_im, summary, skeleton_obj = function_output
         self.skeleton.update({'filled_skeleton': skeleton_obj})
+
+        # Calculate the tortuosity of each branch
+        # We define tortuosity as total branch length divided by Euclidean distance
+        # between the endpoints (ranges [1, ∞))
+        summary['tortuosity'] = (
+                summary['branch-distance']
+                / summary['euclidean-distance']
+        )
         self.summary.update({'filled_skeleton': summary})
 
         self.viewer.add_labels(skeletononized_im, name="filled_skeleton", properties=summary)
@@ -164,9 +190,3 @@ class QtSkeletonCurator(QWidget):
         current_color[3] = alpha
         color_map.update({label_value: current_color})
         selected_layer.color = color_map
-
-@napari_hook_implementation
-def napari_experimental_provide_dock_widget():
-    # you can return either a single widget, or a sequence of widgets
-    return QtSkeletonCurator
-

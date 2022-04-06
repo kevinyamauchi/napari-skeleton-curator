@@ -33,8 +33,8 @@ def preprocess_image(
 def make_skeleton(skeleton_im: ImageData) -> Tuple[LabelsData, pd.DataFrame, skan.Skeleton]:
     if skeleton_im.dtype != bool:
         raise TypeError('skeleton image should be a boolean image')
-    skeleton_obj= skan.Skeleton(skeleton_im)
-    summary = skan.summarize(skeleton_obj)
+    skeleton_obj = skan.Skeleton(skeleton_im)
+    summary = skan.summarize(skeleton_obj, find_main_branch=True)
 
     summary['index'] = np.arange(summary.shape[0]) + 1
     skel_labels = np.asarray(skeleton_obj)
