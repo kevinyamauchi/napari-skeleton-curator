@@ -18,8 +18,6 @@ class QtSkeletonCurator(QWidget):
         self.viewer.tooltip.visible = True
 
         # make a widget for preprocessing
-
-
         self.pre_process_widget = magicgui.magicgui(
             preprocess_image,
             call_button='pre-process image',
@@ -118,7 +116,13 @@ class QtSkeletonCurator(QWidget):
         self.summary.update({'skeletonize': summary})
 
         # make the layer with the skeleton
-        self.viewer.add_labels(skeletononized_im, name="skeletonize", properties=summary,)
+        self.viewer.add_labels(
+            skeletononized_im,
+            name="skeletonize",
+            properties=summary,
+            metadata={'skan_obj': skeleton_obj}
+        )
+
 
     def _on_prune(
             self, min_branch_distance: float,
