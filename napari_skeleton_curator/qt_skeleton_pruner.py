@@ -1,5 +1,8 @@
 from typing import List
+
+import napari.layers
 import numpy as np
+import magicgui
 from magicgui.widgets import Table
 from napari.utils.events.containers import EventedList
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
@@ -11,6 +14,19 @@ class QtSkeletonPruner(QWidget):
     def __init__(self, napari_viewer):
         super().__init__()
         self.setLayout(QVBoxLayout())
+        self.viewer = napari_viewer
+
+        # create combobox to select layer
+        self.select_layer_widget = magicgui.magicgui(
+            self._set_layer,
+            call_button='select layer',
+        )
+        self.viewer.layers.events.inserted.connect(
+            self.select_layer_widget.reset_choices
+        )
+        self.viewer.layers.events.removed.connect(
+            self.select_layer_widget.reset_choices
+        )
 
         # make the table
         self._columns_to_display = [
@@ -28,16 +44,13 @@ class QtSkeletonPruner(QWidget):
         self._selected_layer = ''
 
         self._selected_branches = EventedList([])
-        self.viewer = napari_viewer
-
-        # currently hardcoded - add widget
-        self.selected_layer = 'skeletonize'
 
         # connect selected branches events to the table
         self.selected_branches.events.inserted.connect(self._update_table_from_selected_branches)
         self.selected_branches.events.removed.connect(self._update_table_from_selected_branches)
         self.selected_branches.events.changed.connect(self._update_table_from_selected_branches)
 
+        self.layout().addWidget(self.select_layer_widget.native)
         self.layout().addWidget(self.table.native)
         self.layout().addWidget(self.prune_btn)
 
@@ -47,9 +60,14 @@ class QtSkeletonPruner(QWidget):
 
     @selected_layer.setter
     def selected_layer(self, selected_layer):
+        if selected_layer == "":
+            return
         self._connect_mouse_events(selected_layer)
 
         self._selected_layer = selected_layer
+
+    def _set_layer(self, layer: napari.layers.Labels):
+        self.selected_layer = layer.name
 
     @property
     def selected_braches(self) -> EventedList[int]:
