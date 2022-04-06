@@ -3,4 +3,4 @@ try:
 except ImportError:
     __version__ = "unknown"
 
-from ._hook_impl import napari_experimental_provide_dock_widget
+from .qt_skeleton_curator import QtSkeletonCurator

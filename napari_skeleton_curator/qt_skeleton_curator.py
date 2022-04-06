@@ -107,9 +107,9 @@ class QtSkeletonCurator(QWidget):
         # add the preprocessed image as a new layer
         self.viewer.add_image(preprocessed_im, name='preprocessed')
 
-    def _on_skeletonize(self, event):
+    def _on_skeletonize(self, function_output):
         # get the results from the event object
-        skeletononized_im, summary, skeleton_obj = event.value
+        skeletononized_im, summary, skeleton_obj = function_output
 
         # store the skeleton data
         self.skeleton.update({'skeletonize': skeleton_obj})
@@ -146,9 +146,9 @@ class QtSkeletonCurator(QWidget):
         pruned_im = np.asarray(pruned)
         self.viewer.add_labels(pruned_im, properties = summary_pruned, name= 'prune')
 
-    def _on_fill(self,event):
+    def _on_fill(self, function_output):
         # pass the image to our skeletonize function
-        skeletononized_im, summary, skeleton_obj = event.value
+        skeletononized_im, summary, skeleton_obj = function_output
         self.skeleton.update({'filled_skeleton': skeleton_obj})
 
         # Calculate the tortuosity of each branch
