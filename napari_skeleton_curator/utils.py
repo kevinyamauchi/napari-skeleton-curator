@@ -16,7 +16,17 @@ def preprocess_image(
         sigma: float=1,
         sigmas: float=1,
         area_threshold: float = 150
-) -> ImageData:
+)-> ImageData:
+    """ Image processing
+    :param gamma(float) : Performs Gamma Correction on the input image.
+    :param gain(float) : Performs Gamma Correction on the input image.
+    :param sigma(float) : Gaussain filter
+    :param sigmas(float) : Filter an image with the Frangi vesselness filter.
+    :param area_threshold(float) : Sets size of holes when calling remove_small_holes
+
+    :return:
+     binary image with 1 pixel wide skeleton representation of image features
+    """
     gamma_corrected = exposure.adjust_gamma(image, gamma=gamma, gain=gain)
 
     gaussian_original_image = gaussian(gamma_corrected, sigma=sigma)
@@ -31,6 +41,18 @@ def preprocess_image(
 
 
 def make_skeleton(skeleton_im: ImageData) -> Tuple[LabelsData, pd.DataFrame, skan.Skeleton]:
+    """
+    Takes a binary (bool) skeleton and converts it into a Skan skeleton object
+
+    :param skeleton_im (ImageData,bool): binary skeleton obtained from pre_process_image
+
+    :return:
+    csr_graph of  skeleton object
+    table in the form of a pandas DataFrame,
+    a labelled skeleton object
+
+
+    """
     if skeleton_im.dtype != bool:
         raise TypeError('skeleton image should be a boolean image')
     skeleton_obj = skan.Skeleton(skeleton_im)
@@ -51,14 +73,22 @@ def remove_small_branches(
         branch_type_2: bool = False,
         branch_type_3: bool = False,
 ):
+    """
+
+    :param skeleton: skan skeleton object from make_skeleton
+    :param summary (pd.Dataframe) : skan skeleton summary from make_skeleton
+    :param min_branch_dist (float): specifies minimum branch distance/length to be removed
+    :param branch_type_0 :endpoint-to-endpoint (isolated branch
+    :param branch_type_1:endpoint-to-endpoint (isolated branch
+    :param branch_type_2:junction-to-junction
+    :param branch_type_3:isolated cycle
+
+    :return:
+    pruned skeleton
+    """
+
     too_short = (summary['branch-distance'] < min_branch_dist)
 
-    # get the branches that are of the type to cut
-    #    branch types can be selected as follows:
-    #     0 = endpoint-to-endpoint (isolated branch)
-    #     1 = junction-to-endpoint
-    #     2 = junction-to-junction
-    #     3 = isolated cycle
     types_to_prune = []
     if branch_type_0:
         types_to_prune.append(0)
@@ -86,6 +116,12 @@ def fill_skeleton_holes(
         skeleton_im: LabelsData,
         dilation_size: int = 3
 ) -> Tuple[LabelsData, pd.DataFrame, skan.Skeleton]:
+    """
+
+    :param skeleton_im (ImageData,bool): binary skeleton obtained from pre_process_image
+    :param dilation_size(int): size of selem
+    :return:  fast binary morphological dilation of an image.
+    """
     binary_skeleton = skeleton_im.astype(bool)
     dilated_skeleton = binary_dilation(binary_skeleton, selem=disk(dilation_size))
 
