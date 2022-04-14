@@ -5,22 +5,24 @@ import numpy as np
 import pandas as pd
 import skan
 from skimage.exposure import exposure
-from skimage.filters import gaussian
-from skimage.filters import threshold_mean
+from skimage.filters import gaussian,threshold_mean,frangi
 from skimage.morphology import binary_dilation, disk, remove_small_holes, skeletonize
 
 
 def preprocess_image(
-        image: ImageData,
-        gamma: float=1.5,
-        sigma: float=2,
+        image: ImageData,   #! does not upload image
+        gamma: float=1,     #! allow real time visulaisation
+        gain: float=1,
+        sigma: float=1,
+        sigmas: float=1,
         area_threshold: float = 150
 ) -> ImageData:
-    gamma_corrected = exposure.adjust_gamma(image, gamma)
+    gamma_corrected = exposure.adjust_gamma(image, gamma=gamma, gain=gain)
 
     gaussian_original_image = gaussian(gamma_corrected, sigma=sigma)
     mean_thresh_gaussian = threshold_mean(gaussian_original_image)
     mean_binary = gaussian_original_image > mean_thresh_gaussian
+    frangi_mean = frangi(mean_binary,sigmas=sigmas)
 
     remove_holes_binary = remove_small_holes(mean_binary, area_threshold=area_threshold)
     skeleton_mean_binary = skeletonize(remove_holes_binary)
@@ -31,8 +33,8 @@ def preprocess_image(
 def make_skeleton(skeleton_im: ImageData) -> Tuple[LabelsData, pd.DataFrame, skan.Skeleton]:
     if skeleton_im.dtype != bool:
         raise TypeError('skeleton image should be a boolean image')
-    skeleton_obj= skan.Skeleton(skeleton_im)
-    summary = skan.summarize(skeleton_obj)
+    skeleton_obj = skan.Skeleton(skeleton_im)
+    summary = skan.summarize(skeleton_obj, find_main_branch=True)
 
     summary['index'] = np.arange(summary.shape[0]) + 1
     skel_labels = np.asarray(skeleton_obj)
